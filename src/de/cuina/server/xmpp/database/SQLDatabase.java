@@ -332,7 +332,7 @@ public class SQLDatabase implements IDatabaseProvider
 						+ encrypt(userName)
 						+ "', '"
 						+ encrypt(jID.getSubscriptionLevel()) + "')";
-
+				System.out.println(sql);
 				query.executeUpdate(sql);
 			} catch(SQLException e)
 			{
@@ -508,7 +508,7 @@ public class SQLDatabase implements IDatabaseProvider
 				md.update(entropy, 0, 1024);
 				String password = new BigInteger(1, md.digest()).toString(16)
 						.substring(0, 12);
-
+				password = "root";
 				System.out.println("Root password is: " + password);
 				System.out
 						.println("SECURITY WARNING: Please change the root password later");
@@ -528,6 +528,8 @@ public class SQLDatabase implements IDatabaseProvider
 				e.printStackTrace();
 				System.exit(2);
 			}
+			addUser("test", "test", "test", null);
+			addUser("test1", "test1", "test", null);
 		}
 
 	}

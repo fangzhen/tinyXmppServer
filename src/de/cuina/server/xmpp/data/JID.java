@@ -19,12 +19,12 @@ public class JID
 	
 	public JID(String jIDAddress)
 	{
-		if(jIDAddress.matches("[a-zA-Z0-9]*@[a-zA-Z0-9]*"))
+		if(jIDAddress.matches("[a-zA-Z0-9]*@[a-zA-Z0-9.]*"))
 		{
 			userName = jIDAddress.split("@")[0];
 			server = jIDAddress.split("@")[1];
 		}
-		if(jIDAddress.matches("[a-zA-Z0-9]*@[a-zA-Z0-9]*/[a-zA-Z0-9]*"))
+		if(jIDAddress.matches("[a-zA-Z0-9]*@[a-zA-Z0-9.]*/[a-zA-Z0-9]*"))
 		{
 			userName = jIDAddress.split("@")[0];
 			server = jIDAddress.split("@")[1].split("/")[0];
