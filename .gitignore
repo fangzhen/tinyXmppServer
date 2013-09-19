@@ -218,3 +218,5 @@ pip-log.txt
 *.ks
 /doc
 /lib
+/server.db-journal
+/server.ini
