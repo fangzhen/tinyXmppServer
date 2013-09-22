@@ -21,6 +21,7 @@ public class Server
 {
 	private static String port, keyStoreFile, keyStorePassword, databaseType;
 	private static SecureRandom random = new SecureRandom();
+	public static int ENCODING;
 	
 	public static void main(String[] args)
 	{
@@ -85,6 +86,17 @@ public class Server
 					System.err.println("ERROR: You must specify a database type at 'database_type=' in your ini-file. Stop!");
 					System.exit(0);
 				}
+				if( properties.getProperty("default_encoding") != null){
+					String encodingStr = properties.getProperty("default_encoding");
+					if (encodingStr.equalsIgnoreCase("utf-8") ||  encodingStr.equalsIgnoreCase("utf8")){
+						ENCODING = XMPPServer.UTF8; 
+					}else if (encodingStr.equalsIgnoreCase("ISO88591")){
+						ENCODING = XMPPServer.ISO88591;
+					}else{
+						System.out.println("WARNING: unsupported encoding, set to default iso88591");
+						ENCODING = XMPPServer.ISO88591;
+					}
+				}
 			} else
 			{
 				System.out.println("WARNING: No config found, start with default settings");
@@ -93,6 +105,7 @@ public class Server
 				keyStorePassword = "";
 				databaseType = "sqlite";
 				provider = new SQLDatabase("sqlite", "server.db");
+				ENCODING = XMPPServer.UTF8;
 			}
 			
 			

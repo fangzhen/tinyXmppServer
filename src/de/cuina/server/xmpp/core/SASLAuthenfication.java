@@ -49,7 +49,7 @@ public class SASLAuthenfication
 				String challenge = "realm=\"" + stream.getServer() + "\",nonce=\"" + nonce
 						+ "\",qop=\"auth\",charset=utf-8,algorithm=md5-sess";
 				connection.sendString("<challenge xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>"
-						+ Base64.encodeBytes(challenge.getBytes("ISO-8859-1")) + "</challenge>", 1);
+						+ Base64.encodeBytes(challenge.getBytes("ISO-8859-1")) + "</challenge>", Server.ENCODING);
 				System.out.println("(S) 1st authentication challenge sended");
 				state = 2;
 			} catch (IOException e)
@@ -213,13 +213,13 @@ public class SASLAuthenfication
 											"<challenge xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>"
 													+ Base64.encodeBytes(("rspauth=" + serverHash)
 															.getBytes("ISO-8859-1"))
-													+ "</challenge>", 1);
+													+ "</challenge>", Server.ENCODING);
 									System.out.println("(S) 2nd authentication challenge sended");
 									state = 4;
 									return;
 								} else connection.sendString(
 										"<failure xmlns='urn:ietf:params:xml:ns:xmpp-sasl'>"
-												+ "<not-authorized/></failure>", 1);
+												+ "<not-authorized/></failure>", Server.ENCODING);
 
 							}
 						}
@@ -238,7 +238,7 @@ public class SASLAuthenfication
 
 		try
 		{
-			connection.sendString("<response xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>", 1);
+			connection.sendString("<response xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>", Server.ENCODING);
 			connection.close();
 		} catch (IOException e)
 		{
@@ -256,7 +256,7 @@ public class SASLAuthenfication
 		state = 5;
 		try
 		{
-			connection.sendString("<success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>", 1);
+			connection.sendString("<success xmlns='urn:ietf:params:xml:ns:xmpp-sasl'/>", Server.ENCODING);
 			System.out.println("(S) Authenfication accepted");
 			stream.getJID().setUserName(userName);
 			stream.getJID().setContacts(db.getUser(userName).getJIDs());

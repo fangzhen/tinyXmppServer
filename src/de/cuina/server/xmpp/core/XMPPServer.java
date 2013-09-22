@@ -28,6 +28,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import de.cuina.server.Server;
 import de.cuina.server.xmpp.data.Session;
 import de.cuina.server.xmpp.database.IDatabaseProvider;
 
@@ -217,7 +218,7 @@ public class XMPPServer
 		
 		public synchronized void close() throws IOException, XMLStreamException
 		{
-			this.sendString("</stream>", 1);
+			this.sendString("</stream>", Server.ENCODING);
 			try
 			{
 				in.close();

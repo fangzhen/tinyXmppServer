@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import de.cuina.server.Server;
 import de.cuina.server.xmpp.core.XMPPServer.Connection;
 
 public class Session
@@ -54,7 +55,7 @@ public class Session
 			for(String send : undeliveredSend)
 				try
 				{
-					connection.sendString(send, 1);
+					connection.sendString(send, Server.ENCODING);
 				} catch (IOException e)
 				{
 					e.printStackTrace();
@@ -87,7 +88,7 @@ public class Session
 				{
 					connection.sendString("<message type='chat' to='" + jID.getFullJIDString()
 							+ "' from='" + from.getFullJIDString() + "'>" + "<body>" + message
-							+ "</body></message>", 1);
+							+ "</body></message>", Server.ENCODING);
 				} catch (IOException e)
 				{
 					e.printStackTrace();
@@ -200,7 +201,7 @@ public class Session
 			if(connection != null && !from.getJIDString().equals(jID.getJIDString()))
 				try
 				{
-					connection.sendString(toSend, 1);
+					connection.sendString(toSend, Server.ENCODING);
 				} catch (IOException e)
 				{
 					e.printStackTrace();
@@ -235,7 +236,7 @@ public class Session
 			if(connection != null)
 				try
 				{
-					connection.sendString(answer, 0);
+					connection.sendString(answer, Server.ENCODING);
 				} catch (IOException e)
 				{
 					e.printStackTrace();
@@ -257,7 +258,7 @@ public class Session
 					+ "<query xmlns='jabber:iq:roster'>"
 					+ "<item ask='subscribe' jid='" + contact.getJIDString() + "' name='"
 					+ contact.getNickName() + "' subscription='"
-					+ contact.getSubscriptionLevel() + "'/></query></iq>", 0);
+					+ contact.getSubscriptionLevel() + "'/></query></iq>", Server.ENCODING);
 					contact.setAskLevel("subscribe");
 				} catch(IOException e)
 				{
@@ -280,7 +281,7 @@ public class Session
 					+ "<query xmlns='jabber:iq:roster'>"
 					+ "<item jid='" + contact.getJIDString() + "' name='"
 					+ contact.getNickName() + "' subscription='"
-					+ contact.getSubscriptionLevel() + "'/></query></iq>", 0);
+					+ contact.getSubscriptionLevel() + "'/></query></iq>", Server.ENCODING);
 					contact.setAskLevel("subscribe");
 				} catch(IOException e)
 				{
@@ -319,7 +320,7 @@ public class Session
 
 				try
 				{
-					connection.sendString(message, 1);
+					connection.sendString(message, Server.ENCODING);
 				} catch (IOException e)
 				{
 					e.printStackTrace();
@@ -342,7 +343,7 @@ public class Session
 
 			try
 			{
-				connection.sendString(message, 1);
+				connection.sendString(message, Server.ENCODING);
 			} catch (IOException e)
 			{
 				e.printStackTrace();

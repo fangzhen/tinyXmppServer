@@ -1,5 +1,8 @@
 package de.cuina.server.xmpp.core;
 
+import info.fzhen.xmppserver.filter.IFilter;
+import info.fzhen.xmppserver.filter.KeyWordsFilter;
+
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyManagementException;
@@ -8,12 +11,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import de.cuina.server.Server;
 import de.cuina.server.xmpp.core.XMPPServer.Connection;
 import de.cuina.server.xmpp.data.Chat;
 import de.cuina.server.xmpp.data.JID;
@@ -31,44 +34,12 @@ public class XMPPParser extends Thread {
 	private LinkedList<XMPPStanza> stanzaStack = new LinkedList<XMPPStanza>();
 
 	private String tempMessage = "";
-
-	private class XMPPStanza {
-		private String name, localName;
-		private String value;
-		private HashMap<String, String> attributes = new HashMap<String, String>();
-
-		public String getName() {
-			return name;
-		}
-
-		public void setName(String name) {
-			this.name = name;
-		}
-
-		public String getValue() {
-			return value;
-		}
-
-		public void setValue(String value) {
-			this.value = value;
-		}
-
-		public HashMap<String, String> getAttributes() {
-			return attributes;
-		}
-
-		public String getLocalName() {
-			return localName;
-		}
-
-		public void setLocalName(String localName) {
-			this.localName = localName;
-		}
-	}
+	private IFilter filter;
 
 	public XMPPParser(XMLStreamReader reader, Connection connection) {
 		this.reader = reader;
 		this.connection = connection;
+		this.filter = new KeyWordsFilter();
 	}
 
 	XMPPStanza currentStanza;
@@ -89,7 +60,9 @@ public class XMPPParser extends Thread {
 					}
 
 					stanzaStack.push(currentStanza);
-
+					if (filter != null){
+						filter.startElement(stanzaStack);
+					}
 					if (session == null)
 						System.out.println("received (" + connection.hashCode() + "): " + currentStanza.getName());
 					else
@@ -109,14 +82,14 @@ public class XMPPParser extends Thread {
 
 									connection.sendString("<?xml version='1.0'?>" + "<stream:stream from='" + stream.getServer() + "' id='" + stream.getId()
 											+ "' version='" + stream.getVersion() + "' xml:lang='en' xmlns='jabber:client' "
-											+ "xmlns:stream='http://etherx.jabber.org/streams'>" + XMPPServer.STREAM_FEATURES_INIT, 1);
+											+ "xmlns:stream='http://etherx.jabber.org/streams'>" + XMPPServer.STREAM_FEATURES_INIT, Server.ENCODING);
 								} else {
 									if (new File("server.ks").exists()) {
 										Stream tempStream = new Stream(currentStanza.getAttributes().get("to"), currentStanza.getAttributes().get("version"));
 
 										connection.sendString("<?xml version='1.0'?>" + "<stream:stream from='" + tempStream.getServer() + "' id='"
 												+ tempStream.getId() + "' version='" + tempStream.getVersion() + "' xml:lang='en' xmlns='jabber:client' "
-												+ "xmlns:stream='http://etherx.jabber.org/streams'>" + XMPPServer.STREAM_FEATURES_SSL_INIT, 1);
+												+ "xmlns:stream='http://etherx.jabber.org/streams'>" + XMPPServer.STREAM_FEATURES_SSL_INIT, Server.ENCODING);
 									}
 
 								}
@@ -124,7 +97,7 @@ public class XMPPParser extends Thread {
 
 								connection.sendString("<?xml version='1.0'?>" + "<stream:stream from='" + stream.getServer() + "' id='" + stream.getId()
 										+ "' version='" + stream.getVersion() + "' xml:lang='en' xmlns='jabber:client' "
-										+ "xmlns:stream='http://etherx.jabber.org/streams'>" + XMPPServer.STREAM_FEATURES_BIND, 1);
+										+ "xmlns:stream='http://etherx.jabber.org/streams'>" + XMPPServer.STREAM_FEATURES_BIND, Server.ENCODING);
 							}
 
 							System.out.println("(S) Stream response sended");
@@ -133,7 +106,7 @@ public class XMPPParser extends Thread {
 					} else
 
 					if (isCurrent("{urn:ietf:params:xml:ns:xmpp-tls}starttls")) {
-						connection.sendString("<proceed xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>", 1);
+						connection.sendString("<proceed xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>", Server.ENCODING);
 						try {
 							connection.setSecureSocket();
 						} catch (NoSuchAlgorithmException | KeyManagementException | UnrecoverableKeyException | CertificateException | KeyStoreException e) {
@@ -174,7 +147,7 @@ public class XMPPParser extends Thread {
 							}
 
 							connection.sendString("<iq from='" + stream.getServer() + "' " + "type='result' " + "id='"
-									+ stanzaStack.get(1).getAttributes().get("id") + "'/>", 1);
+									+ stanzaStack.get(1).getAttributes().get("id") + "'/>", Server.ENCODING);
 
 						}
 					} else
@@ -182,7 +155,7 @@ public class XMPPParser extends Thread {
 					if (isCurrent("{http://jabber.org/protocol/disco#items}query")) {
 						if (isIqGet(1)) {
 							connection.sendString("<iq from='" + stream.getServer() + "' " + "type='result' " + "id='"
-									+ stanzaStack.get(1).getAttributes().get("id") + "'><query xmlns='http://jabber.org/protocol/disco#items'/></iq>", 1);
+									+ stanzaStack.get(1).getAttributes().get("id") + "'><query xmlns='http://jabber.org/protocol/disco#items'/></iq>", Server.ENCODING);
 
 						}
 					} else
@@ -199,7 +172,7 @@ public class XMPPParser extends Thread {
 									// +
 									// "<feature var='jabber:iq:register'/>"
 									+ "<feature var='jabber:iq:search'/>" + "<feature var='jabber:iq:time'/>" + "<feature var='jabber:iq:version'/>"
-									+ "</query>" + "</iq>", 1);
+									+ "</query>" + "</iq>", Server.ENCODING);
 
 						}
 					} else
@@ -209,11 +182,11 @@ public class XMPPParser extends Thread {
 							if (session.getJID().getVCard() != null) {
 								connection.sendString(
 										"<iq type='result' from='" + stream.getServer() + "' " + "id='" + stanzaStack.get(1).getAttributes().get("id") + "'>"
-												+ "<vCard xmlns='vcard-temp'>" + session.getJID().getVCard() + "</vCard></iq>", 1);
+												+ "<vCard xmlns='vcard-temp'>" + session.getJID().getVCard() + "</vCard></iq>", Server.ENCODING);
 							} else {
 								connection.sendString(
 										"<iq type='result' from='" + stream.getServer() + "' " + "id='" + stanzaStack.get(1).getAttributes().get("id") + "'>"
-												+ "<vCard xmlns='vcard-temp'/></iq>", 1);
+												+ "<vCard xmlns='vcard-temp'/></iq>", Server.ENCODING);
 							}
 						}
 
@@ -235,7 +208,7 @@ public class XMPPParser extends Thread {
 
 							answer += "</iq>";
 
-							connection.sendString(answer, 1);
+							connection.sendString(answer, Server.ENCODING);
 						}
 
 					} else
@@ -254,7 +227,7 @@ public class XMPPParser extends Thread {
 
 					if (isCurrent("{urn:xmpp:ping}ping")) {
 						connection.sendString("<iq type='result' from='" + stream.getServer() + "' " + "id='" + stanzaStack.get(1).getAttributes().get("id")
-								+ "'/>", 1);
+								+ "'/>", Server.ENCODING);
 					} else
 
 					if (isCurrent("{jabber:client}message")) {
@@ -286,15 +259,15 @@ public class XMPPParser extends Thread {
 
 									connection.sendString("<iq to='" + session.getJID().getJIDString() + "' type='set' id='" + getParameterAt(2, "id") + "'>"
 											+ "<query xmlns='jabber:iq:roster'>" + "<item jid='" + jID.getJIDString() + "' name='" + nick
-											+ "' subscription='none'><group></group></item></query></iq>", 0);
+											+ "' subscription='none'><group></group></item></query></iq>", Server.ENCODING);
 
 									connection.sendString("<iq to='" + session.getJID().getFullJIDString() + "' type='result' id='" + getParameterAt(2, "id")
-											+ "'/>", 0);
+											+ "'/>", Server.ENCODING);
 								} else {
 									JID jID = session.getJID().getContact(id);
 									if (jID != null) {
 										connection.sendString(
-												"<iq to='" + session.getJID().getFullJIDString() + "' type='result' id='" + getParameterAt(2, "id") + "'/>", 0);
+												"<iq to='" + session.getJID().getFullJIDString() + "' type='result' id='" + getParameterAt(2, "id") + "'/>", Server.ENCODING);
 									}
 								}
 
@@ -413,6 +386,9 @@ public class XMPPParser extends Thread {
 
 				if (reader.getEventType() == XMLStreamReader.CHARACTERS) {
 					currentStanza.setValue(reader.getText());
+					if(filter != null){
+						filter.textElement(stanzaStack);
+					}
 					// System.out.println(reader.getText());
 					if (isCurrent("{urn:ietf:params:xml:ns:xmpp-sasl}response") && authenfication != null) {
 						if (authenfication.getState() == 2)
@@ -451,7 +427,7 @@ public class XMPPParser extends Thread {
 					if (currentStanza.getLocalName().equals("script")) {
 						if (session.getJID().getGroup() != null)
 							if (session.getJID().getGroup().equals("root")) {
-								String command = currentStanza.value;
+								String command = currentStanza.getValue();
 								String message = "";
 
 								if (command.equals("get sessions")) {
@@ -461,7 +437,7 @@ public class XMPPParser extends Thread {
 										message += session + "{" + scriptSession.getConnections().size() + " connection(s), " + scriptSession.getChats().size()
 												+ " chat(s), " + scriptSession.getUndeliveredSendCount() + " delivered message(s)}" + "\n";
 									}
-									connection.sendString("<script type='result'>" + message + "</script>", 0);
+									connection.sendString("<script type='result'>" + message + "</script>", Server.ENCODING);
 								} else
 
 								if (command.equals("get registered users")) {
@@ -469,7 +445,7 @@ public class XMPPParser extends Thread {
 									message = users.length + " registered user(s):\n";
 									for (String user : users)
 										message += user + "\n";
-									connection.sendString("<script type='result'>" + message + "</script>", 0);
+									connection.sendString("<script type='result'>" + message + "</script>", Server.ENCODING);
 								} else
 
 								if (command.startsWith("kick")) {
@@ -492,7 +468,7 @@ public class XMPPParser extends Thread {
 											message += user + " not found!\n";
 									}
 
-									connection.sendString("<script type='result'>" + message + "</script>", 0);
+									connection.sendString("<script type='result'>" + message + "</script>", Server.ENCODING);
 								} else
 
 								if (command.startsWith("get chats")) {
@@ -514,11 +490,11 @@ public class XMPPParser extends Thread {
 											message += user + " not found!\n";
 									}
 
-									connection.sendString("<script type='result'>" + message + "</script>", 0);
+									connection.sendString("<script type='result'>" + message + "</script>", Server.ENCODING);
 								} else
 
 								if (command.equals("stop server")) {
-									connection.sendString("<script type='result'>stop server now</script>", 0);
+									connection.sendString("<script type='result'>stop server now</script>", Server.ENCODING);
 									connection.stopServer();
 								} else
 
@@ -530,9 +506,9 @@ public class XMPPParser extends Thread {
 										for (String user : users) {
 											if (XMPPServer.getDatabase().getUser(user) == null) {
 												XMPPServer.getDatabase().addUser(user, "nopw", "users", null);
-												connection.sendString("<script type='result'>registered " + user + "</script>", 0);
+												connection.sendString("<script type='result'>registered " + user + "</script>", Server.ENCODING);
 											} else
-												connection.sendString("<script type='error'>" + user + " is allready registered</script>", 0);
+												connection.sendString("<script type='error'>" + user + " is allready registered</script>", Server.ENCODING);
 										}
 									}
 
@@ -548,9 +524,9 @@ public class XMPPParser extends Thread {
 
 										if (XMPPServer.getDatabase().getUser(user) != null) {
 											XMPPServer.getDatabase().setPassword(user, password);
-											connection.sendString("<script type='result'>set password for " + user + " done</script>", 0);
+											connection.sendString("<script type='result'>set password for " + user + " done</script>",Server.ENCODING);
 										} else
-											connection.sendString("<script type='error'>" + user + " not found</script>", 0);
+											connection.sendString("<script type='error'>" + user + " not found</script>", Server.ENCODING);
 									}
 
 								} else
@@ -565,9 +541,9 @@ public class XMPPParser extends Thread {
 
 										if (XMPPServer.getDatabase().getUser(user) != null) {
 											XMPPServer.getDatabase().setGroup(user, group);
-											connection.sendString("<script type='result'>set group for " + user + " done</script>", 0);
+											connection.sendString("<script type='result'>set group for " + user + " done</script>", Server.ENCODING);
 										} else
-											connection.sendString("<script type='error'>" + user + " not found</script>", 0);
+											connection.sendString("<script type='error'>" + user + " not found</script>", Server.ENCODING);
 									}
 
 								} else
@@ -586,7 +562,7 @@ public class XMPPParser extends Thread {
 										else
 											message += user + " not found!\n";
 									}
-									connection.sendString("<script type='result'>" + message + "</script>", 0);
+									connection.sendString("<script type='result'>" + message + "</script>", Server.ENCODING);
 
 								} else
 
@@ -610,19 +586,19 @@ public class XMPPParser extends Thread {
 										} else
 											message += user + " not found!\n";
 									}
-									connection.sendString("<script type='result'>" + message + "</script>", 0);
+									connection.sendString("<script type='result'>" + message + "</script>", Server.ENCODING);
 								}
 
 								if (command.startsWith("help")) {
 									connection.sendString("<script type='result'>cuina server script help\n" + "available commands:\n" + "get sessions\n"
 											+ "get registered users\n" + "kick [users | $all]\n" + "get chats [users | $all]\n" + "stop server\n"
 											+ "register [users]\n" + "set password [user] [password]\n" + "set group [user] [group]\n"
-											+ "get group [users | $all]\n" + "get roster [users | $all]\n" + "</script>", 0);
+											+ "get group [users | $all]\n" + "get roster [users | $all]\n" + "</script>", Server.ENCODING);
 								}
 							} else
-								connection.sendString("<script type='error'>" + "No permission:\n You are not a member of group 'root'.\n" + "</script>", 0);
+								connection.sendString("<script type='error'>" + "No permission:\n You are not a member of group 'root'.\n" + "</script>", Server.ENCODING);
 						else
-							connection.sendString("<script type='error'>" + "No permission:\n You are not a member of group 'root'\n" + "</script>", 0);
+							connection.sendString("<script type='error'>" + "No permission:\n You are not a member of group 'root'\n" + "</script>", Server.ENCODING);
 					} else {
 						int pos = getPosInStack("{vcard-temp}vCard");
 						if (pos > 0) {
@@ -638,10 +614,13 @@ public class XMPPParser extends Thread {
 					if (isCurrent(reader.getName().toString())) {
 						// System.out.println("end: " +
 						// stanzaStack.peek().getName());
+						if (filter != null){
+							filter.endElement(stanzaStack);
+						}
 						if (isCurrent("{urn:ietf:params:xml:ns:xmpp-bind}bind"))
 							connection.sendString("<iq type='result' id='" + stanzaStack.get(1).getAttributes().get("id") + "'>"
 									+ "<bind xmlns='urn:ietf:params:xml:ns:xmpp-bind'>" + "<jid>" + stream.getJID().getJIDString() + "</jid>" + "</bind>"
-									+ "</iq>", 0);
+									+ "</iq>", Server.ENCODING);
 						else if (isCurrent("{jabber:client}presence") && getParameterAt(0, "type") == null)
 							session.broadcastPresence();
 						else if (isCurrent("{jabber:client}message")) {
