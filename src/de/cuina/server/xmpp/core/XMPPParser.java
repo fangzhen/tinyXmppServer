@@ -12,6 +12,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -34,12 +35,13 @@ public class XMPPParser extends Thread {
 	private LinkedList<XMPPStanza> stanzaStack = new LinkedList<XMPPStanza>();
 
 	private String tempMessage = "";
-	private IFilter filter;
+	private List<IFilter> filters;
 
 	public XMPPParser(XMLStreamReader reader, Connection connection) {
 		this.reader = reader;
 		this.connection = connection;
-		this.filter = new KeyWordsFilter();
+		this.filters = new ArrayList<>();
+		filters.add(new KeyWordsFilter());
 	}
 
 	XMPPStanza currentStanza;
@@ -60,8 +62,10 @@ public class XMPPParser extends Thread {
 					}
 
 					stanzaStack.push(currentStanza);
-					if (filter != null){
-						filter.startElement(stanzaStack);
+					if (filters != null){
+						for (IFilter filter: filters){
+							filter.startElement(stanzaStack);
+						}
 					}
 					if (session == null)
 						System.out.println("received (" + connection.hashCode() + "): " + currentStanza.getName());
@@ -386,8 +390,10 @@ public class XMPPParser extends Thread {
 
 				if (reader.getEventType() == XMLStreamReader.CHARACTERS) {
 					currentStanza.setValue(reader.getText());
-					if(filter != null){
-						filter.textElement(stanzaStack);
+					if(filters != null){
+						for (IFilter filter: filters){
+							filter.textElement(stanzaStack);
+						}
 					}
 					// System.out.println(reader.getText());
 					if (isCurrent("{urn:ietf:params:xml:ns:xmpp-sasl}response") && authenfication != null) {
@@ -614,8 +620,10 @@ public class XMPPParser extends Thread {
 					if (isCurrent(reader.getName().toString())) {
 						// System.out.println("end: " +
 						// stanzaStack.peek().getName());
-						if (filter != null){
-							filter.endElement(stanzaStack);
+						if (filters != null){
+							for (IFilter filter: filters){
+								filter.endElement(stanzaStack);
+							}
 						}
 						if (isCurrent("{urn:ietf:params:xml:ns:xmpp-bind}bind"))
 							connection.sendString("<iq type='result' id='" + stanzaStack.get(1).getAttributes().get("id") + "'>"
