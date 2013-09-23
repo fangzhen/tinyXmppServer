@@ -1,4 +1,6 @@
 xmpp-server
+
+forked from https://github.com/fireandfuel/xmpp-server
 ===========
 
 Another tiny xmpp server
