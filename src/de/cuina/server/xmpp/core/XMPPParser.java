@@ -62,8 +62,8 @@ public class XMPPParser extends Thread {
 					}
 
 					stanzaStack.push(currentStanza);
-					if (filters != null){
-						for (IFilter filter: filters){
+					if (filters != null) {
+						for (IFilter filter : filters) {
 							filter.startElement(stanzaStack);
 						}
 					}
@@ -159,7 +159,8 @@ public class XMPPParser extends Thread {
 					if (isCurrent("{http://jabber.org/protocol/disco#items}query")) {
 						if (isIqGet(1)) {
 							connection.sendString("<iq from='" + stream.getServer() + "' " + "type='result' " + "id='"
-									+ stanzaStack.get(1).getAttributes().get("id") + "'><query xmlns='http://jabber.org/protocol/disco#items'/></iq>", Server.ENCODING);
+									+ stanzaStack.get(1).getAttributes().get("id") + "'><query xmlns='http://jabber.org/protocol/disco#items'/></iq>",
+									Server.ENCODING);
 
 						}
 					} else
@@ -271,7 +272,8 @@ public class XMPPParser extends Thread {
 									JID jID = session.getJID().getContact(id);
 									if (jID != null) {
 										connection.sendString(
-												"<iq to='" + session.getJID().getFullJIDString() + "' type='result' id='" + getParameterAt(2, "id") + "'/>", Server.ENCODING);
+												"<iq to='" + session.getJID().getFullJIDString() + "' type='result' id='" + getParameterAt(2, "id") + "'/>",
+												Server.ENCODING);
 									}
 								}
 
@@ -390,8 +392,8 @@ public class XMPPParser extends Thread {
 
 				if (reader.getEventType() == XMLStreamReader.CHARACTERS) {
 					currentStanza.setValue(reader.getText());
-					if(filters != null){
-						for (IFilter filter: filters){
+					if (filters != null) {
+						for (IFilter filter : filters) {
 							filter.textElement(stanzaStack);
 						}
 					}
@@ -530,7 +532,7 @@ public class XMPPParser extends Thread {
 
 										if (XMPPServer.getDatabase().getUser(user) != null) {
 											XMPPServer.getDatabase().setPassword(user, password);
-											connection.sendString("<script type='result'>set password for " + user + " done</script>",Server.ENCODING);
+											connection.sendString("<script type='result'>set password for " + user + " done</script>", Server.ENCODING);
 										} else
 											connection.sendString("<script type='error'>" + user + " not found</script>", Server.ENCODING);
 									}
@@ -602,9 +604,11 @@ public class XMPPParser extends Thread {
 											+ "get group [users | $all]\n" + "get roster [users | $all]\n" + "</script>", Server.ENCODING);
 								}
 							} else
-								connection.sendString("<script type='error'>" + "No permission:\n You are not a member of group 'root'.\n" + "</script>", Server.ENCODING);
+								connection.sendString("<script type='error'>" + "No permission:\n You are not a member of group 'root'.\n" + "</script>",
+										Server.ENCODING);
 						else
-							connection.sendString("<script type='error'>" + "No permission:\n You are not a member of group 'root'\n" + "</script>", Server.ENCODING);
+							connection.sendString("<script type='error'>" + "No permission:\n You are not a member of group 'root'\n" + "</script>",
+									Server.ENCODING);
 					} else {
 						int pos = getPosInStack("{vcard-temp}vCard");
 						if (pos > 0) {
@@ -620,8 +624,8 @@ public class XMPPParser extends Thread {
 					if (isCurrent(reader.getName().toString())) {
 						// System.out.println("end: " +
 						// stanzaStack.peek().getName());
-						if (filters != null){
-							for (IFilter filter: filters){
+						if (filters != null) {
+							for (IFilter filter : filters) {
 								filter.endElement(stanzaStack);
 							}
 						}
@@ -654,19 +658,11 @@ public class XMPPParser extends Thread {
 				}
 			}
 		} catch (XMLStreamException e) {
-			if (reader.getLocalName().equals("stream")) {
-				System.out.println("(C) Connection closed by client");
-				e.printStackTrace();
-				if (session != null) {
-					session.broadcastPresence();
-					session.removeConnection(connection);
-				}
-			} else {
-				try {
-					reader.nextTag();
-				} catch (XMLStreamException e1) {
-					e1.printStackTrace();
-				}
+			System.out.println("(C) Connection closed by client");
+			e.printStackTrace();
+			if (session != null) {
+				session.broadcastPresence();
+				session.removeConnection(connection);
 			}
 		} catch (IOException e) {
 			try {

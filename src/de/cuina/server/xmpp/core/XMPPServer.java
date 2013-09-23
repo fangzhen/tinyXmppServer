@@ -97,6 +97,7 @@ public class XMPPServer
 			}
 		} catch (IOException e)
 		{
+			e.printStackTrace();
 			System.exit(0);
 		}
 
